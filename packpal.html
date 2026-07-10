@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PackPal</title>
+
+<!-- iOS home screen / PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="PackPal">
+
+<!-- Home screen icon — inline SVG rendered as a data URI so no separate file needed -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%234A6B56'/%3E%3Ctext x='90' y='112' font-size='88' text-anchor='middle'%3E🎒%3C/text%3E%3Ctext x='90' y='158' font-family='Georgia,serif' font-size='24' font-weight='bold' fill='%23C8DDD0' text-anchor='middle'%3EPackPal%3C/text%3E%3C/svg%3E">
+
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #FAF7F2;
+  --warm-white: #FFFCF8;
+  --sage: #7A9E87;
+  --sage-light: #C8DDD0;
+  --sage-dark: #4A6B56;
+  --clay: #C47B5A;
+  --clay-light: #F0D9CC;
+  --dusk: #3D3530;
+  --dusk-mid: #6B5E57;
+  --dusk-light: #A89890;
+  --lavender: #B8A8C8;
+  --lavender-light: #EDE8F5;
+  --sky: #8AB4C8;
+  --sky-light: #DAECf4;
+  --border: rgba(61,53,48,0.12);
+  --border-strong: rgba(61,53,48,0.22);
+  --amber-light: #FDF3DC;
+  --amber: #D4A44C;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--dusk); min-height: 100vh; }
+
+/* NAV */
+nav { background: var(--warm-white); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 100; }
+.nav-logo { font-family: 'Lora', serif; font-size: 20px; font-weight: 600; color: var(--dusk); }
+.nav-logo span { color: var(--sage); }
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.nav-progress { font-size: 12px; color: var(--dusk-light); font-weight: 300; }
+.nav-progress strong { color: var(--sage-dark); font-weight: 500; }
+.btn-nav { background: var(--dusk); color: var(--cream); border: none; padding: 8px 18px; border-radius: 100px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 7px; }
+.btn-nav:hover { background: var(--dusk-mid); }
+
+/* HERO */
+.hero { background: var(--warm-white); border-bottom: 1px solid var(--border); padding: 2.5rem 2rem 2rem; text-align: center; }
+.hero-eyebrow { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--sage); font-weight: 500; margin-bottom: 0.75rem; }
+.hero h1 { font-family: 'Lora', serif; font-size: clamp(26px,4vw,38px); font-weight: 600; color: var(--dusk); line-height: 1.2; margin-bottom: 0.6rem; }
+.hero h1 em { font-style: italic; color: var(--clay); }
+.hero p { font-size: 14px; color: var(--dusk-mid); font-weight: 300; max-width: 440px; margin: 0 auto; line-height: 1.7; }
+
+/* CONFIGURATOR PANEL */
+.config-panel { background: var(--warm-white); border-bottom: 1px solid var(--border); }
+.config-inner { max-width: 960px; margin: 0 auto; padding: 1.75rem 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
+
+.config-row { display: flex; flex-direction: column; gap: 0.6rem; }
+.config-row-label { font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--dusk-light); font-weight: 500; }
+
+/* Destination + dates inline */
+.dest-row { display: grid; grid-template-columns: 1fr 160px 160px auto; gap: 10px; align-items: end; }
+.field-group { display: flex; flex-direction: column; gap: 5px; }
+.field-label { font-size: 11px; color: var(--dusk-light); }
+.field-input { border: 1.5px solid var(--border-strong); border-radius: 10px; padding: 9px 13px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 300; background: var(--cream); color: var(--dusk); outline: none; width: 100%; transition: border-color 0.15s, background 0.15s; }
+.field-input:focus { border-color: var(--sage); background: var(--warm-white); box-shadow: 0 0 0 3px rgba(122,158,135,0.12); }
+.field-input::placeholder { color: var(--dusk-light); }
+input[type="date"].field-input { color-scheme: light; }
+
+.btn-tailor { background: var(--sage); color: white; border: none; padding: 0 22px; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; height: 42px; display: flex; align-items: center; gap: 7px; transition: background 0.15s; align-self: end; }
+.btn-tailor:hover { background: var(--sage-dark); }
+.btn-tailor:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* Selector chips: destination type, transport, events */
+.chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 100px; border: 1.5px solid var(--border-strong); background: var(--cream); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.chip:hover { border-color: var(--sage-light); background: var(--warm-white); }
+.chip .chip-icon { font-size: 15px; line-height: 1; }
+.chip .chip-label { font-size: 12px; font-weight: 500; color: var(--dusk); }
+.chip.active-sage { border-color: var(--sage); background: #EDF6F1; box-shadow: 0 0 0 3px rgba(122,158,135,0.12); }
+.chip.active-sage .chip-label { color: var(--sage-dark); }
+.chip.active-clay { border-color: var(--clay); background: #FBF1EC; box-shadow: 0 0 0 3px rgba(196,123,90,0.1); }
+.chip.active-clay .chip-label { color: #8B4A2A; }
+
+/* WEATHER CARD */
+.weather-wrap { max-width: 960px; margin: 0 auto; padding: 0 2rem; }
+.weather-card { border-radius: 14px; padding: 14px 18px; margin-top: 1rem; display: flex; align-items: flex-start; gap: 14px; animation: fadeSlide 0.3s ease; }
+@keyframes fadeSlide { from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)} }
+.weather-card.hot   { background: #FEF3E2; border: 1px solid #F0C97A; }
+.weather-card.cold  { background: #E8F0FE; border: 1px solid #A8C4E8; }
+.weather-card.mild  { background: #E9F7EF; border: 1px solid #9FD5B5; }
+.weather-card.rainy { background: #EEF0F8; border: 1px solid #A8B4D8; }
+.weather-card.info  { background: #F5F3FF; border: 1px solid #C4B8E8; }
+.wc-icon { font-size: 26px; flex-shrink: 0; margin-top: 2px; }
+.wc-body { flex: 1; }
+.wc-headline { font-size: 13px; font-weight: 500; color: var(--dusk); margin-bottom: 3px; }
+.wc-desc { font-size: 12px; color: var(--dusk-mid); font-weight: 300; line-height: 1.6; }
+.wc-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.wc-tag { font-size: 11px; padding: 3px 10px; border-radius: 100px; background: white; color: var(--dusk-mid); border: 1px solid var(--border); }
+.wc-tag.added { background: #E9F7EF; color: #2D6A4F; border-color: #9FD5B5; }
+
+/* PROGRESS */
+.progress-strip { background: var(--warm-white); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.progress-inner { max-width: 960px; margin: 0 auto; padding: 0.9rem 2rem; display: flex; align-items: center; gap: 16px; }
+.progress-track { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--sage); border-radius: 2px; transition: width 0.3s ease; }
+.progress-text { font-size: 13px; color: var(--dusk-mid); white-space: nowrap; font-weight: 300; }
+.progress-text strong { color: var(--sage-dark); font-weight: 500; }
+
+/* MAIN LAYOUT */
+.main { max-width: 960px; margin: 0 auto; padding: 2rem; display: grid; grid-template-columns: 190px 1fr; gap: 2rem; align-items: start; }
+.sidebar { position: sticky; top: 76px; }
+.sidebar-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--dusk-light); margin-bottom: 10px; font-weight: 500; }
+.sidebar-nav { display: flex; flex-direction: column; gap: 2px; }
+.sidebar-link { display: flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 9px; cursor: pointer; font-size: 12px; color: var(--dusk-mid); font-weight: 300; transition: all 0.15s; text-decoration: none; }
+.sidebar-link:hover { background: rgba(61,53,48,0.05); color: var(--dusk); }
+.sidebar-link.done { background: var(--sage-light); color: var(--sage-dark); font-weight: 500; }
+.sidebar-link .sl-icon { font-size: 12px; width: 18px; text-align: center; flex-shrink: 0; }
+.sidebar-link .sl-pct { margin-left: auto; font-size: 11px; color: var(--dusk-light); }
+.sidebar-link.done .sl-pct { color: var(--sage-dark); }
+
+/* SECTIONS */
+.sections { display: flex; flex-direction: column; gap: 1.25rem; }
+.section { background: var(--warm-white); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+.section-header { display: flex; align-items: center; gap: 11px; padding: 14px 18px; cursor: pointer; user-select: none; }
+.section-header:hover { background: rgba(61,53,48,0.025); }
+.sh-icon-box { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+.sh-title { flex: 1; font-family: 'Lora', serif; font-size: 14px; font-weight: 600; color: var(--dusk); }
+.sh-count { font-size: 12px; color: var(--dusk-light); font-weight: 300; margin-right: 6px; }
+.sh-chev { font-size: 10px; color: var(--dusk-light); transition: transform 0.2s; display: inline-block; }
+.section.open .sh-chev { transform: rotate(180deg); }
+.section-body { display: none; border-top: 1px solid var(--border); }
+.section.open .section-body { display: block; }
+
+/* ITEM ROW */
+.item { display: flex; align-items: center; gap: 10px; padding: 10px 18px; border-bottom: 1px solid var(--border); transition: background 0.1s; }
+.item:last-of-type { border-bottom: none; }
+.item:hover { background: rgba(61,53,48,0.025); }
+.item:hover .item-del { opacity: 1; }
+.cb { width: 19px; height: 19px; border-radius: 5px; border: 1.5px solid var(--border-strong); display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; transition: all 0.15s; }
+.cb.on { background: var(--sage); border-color: var(--sage); }
+.cb.on::after { content:'✓'; color:white; font-size:10px; font-weight:700; }
+.item-text { flex: 1; font-size: 13px; color: var(--dusk); font-weight: 300; line-height: 1.45; cursor: pointer; }
+.item-text.done { text-decoration: line-through; color: var(--dusk-light); }
+.item-pill { display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 4px; margin-left: 5px; font-weight: 500; vertical-align: middle; }
+.pill-weather { background: var(--amber-light); color: #7A5500; }
+.pill-transport { background: #E8F0FE; color: #2B4B8C; }
+.badge { font-size: 10px; padding: 2px 8px; border-radius: 100px; font-weight: 500; flex-shrink: 0; }
+.badge-baby   { background: var(--lavender-light); color: #6B5A8A; }
+.badge-adult  { background: var(--sky-light); color: #3A6B85; }
+.badge-shared { background: #EEEBE6; color: var(--dusk-mid); }
+.item-del { opacity: 0; background: none; border: none; cursor: pointer; color: var(--dusk-light); font-size: 17px; line-height: 1; padding: 2px 4px; border-radius: 4px; transition: opacity 0.15s, color 0.15s, background 0.15s; flex-shrink: 0; }
+.item-del:hover { color: #B02020; background: #FDECEA; }
+
+/* ADD ROW */
+.add-row { display: flex; align-items: center; gap: 8px; padding: 9px 18px; border-top: 1px solid var(--border); background: rgba(250,247,242,0.5); }
+.add-row input { flex: 1; border: 1px solid var(--border-strong); border-radius: 8px; padding: 7px 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 300; background: var(--warm-white); color: var(--dusk); outline: none; }
+.add-row input:focus { border-color: var(--sage); }
+.add-row input::placeholder { color: var(--dusk-light); }
+.who-btn { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border-strong); font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; background: var(--warm-white); color: var(--dusk-mid); transition: all 0.15s; white-space: nowrap; }
+.who-btn.baby  { background: var(--lavender-light); border-color: var(--lavender); color: #6B5A8A; }
+.who-btn.adult { background: var(--sky-light); border-color: var(--sky); color: #3A6B85; }
+.add-btn { width: 30px; height: 30px; border-radius: 8px; background: var(--sage-light); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--sage-dark); transition: background 0.15s; flex-shrink: 0; }
+.add-btn:hover { background: var(--sage); color: white; }
+
+/* BOTTOM BAR */
+.bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--warm-white); border-top: 1px solid var(--border); padding: 11px 2rem; display: flex; align-items: center; justify-content: space-between; gap: 12px; z-index: 50; }
+.bb-label { font-size: 13px; color: var(--dusk-light); font-weight: 300; }
+.bb-label strong { color: var(--dusk); font-weight: 500; }
+.bb-btns { display: flex; gap: 8px; }
+.btn-ghost { padding: 8px 16px; border-radius: 100px; border: 1px solid var(--border-strong); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; background: transparent; color: var(--dusk-mid); }
+.btn-ghost:hover { background: var(--cream); }
+.btn-dark { padding: 8px 18px; border-radius: 100px; border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; background: var(--dusk); color: var(--cream); display: flex; align-items: center; gap: 6px; }
+.btn-dark:hover { background: var(--sage-dark); }
+
+/* MODAL */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(61,53,48,0.45); z-index: 200; align-items: flex-end; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: var(--warm-white); border-radius: 24px 24px 0 0; padding: 2rem; width: 100%; max-width: 600px; animation: slideUp 0.22s ease; }
+@keyframes slideUp { from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1} }
+.modal h2 { font-family: 'Lora', serif; font-size: 20px; font-weight: 600; color: var(--dusk); margin-bottom: 0.5rem; }
+.modal > p { font-size: 14px; color: var(--dusk-mid); font-weight: 300; margin-bottom: 1.5rem; line-height: 1.6; }
+.export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.25rem; }
+.export-opt { background: var(--cream); border: 1.5px solid var(--border); border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.15s; }
+.export-opt:hover { border-color: var(--sage); background: #F0F7F3; }
+.export-opt .eo-icon { font-size: 20px; display: block; margin-bottom: 7px; }
+.export-opt .eo-title { font-size: 13px; font-weight: 500; color: var(--dusk); }
+.export-opt .eo-desc { font-size: 11px; color: var(--dusk-light); margin-top: 2px; font-weight: 300; }
+.modal-close { width: 100%; padding: 10px; border: 1px solid var(--border-strong); border-radius: 100px; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--dusk-mid); cursor: pointer; }
+.modal-close:hover { background: var(--cream); }
+
+.spacer { height: 68px; }
+.pulse { animation: pulse 1.2s ease infinite; display: inline-block; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.35} }
+
+/* FILTER TOGGLE */
+.filter-toggle { display: flex; align-items: center; gap: 6px; padding: 5px 12px 5px 8px; border-radius: 100px; border: 1.5px solid var(--border-strong); background: var(--cream); cursor: pointer; transition: all 0.15s; white-space: nowrap; user-select: none; }
+.filter-toggle:hover { border-color: var(--sage-light); background: var(--warm-white); }
+.filter-toggle.on { border-color: var(--clay); background: #FBF1EC; }
+.filter-toggle .ft-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); transition: background 0.15s; flex-shrink: 0; }
+.filter-toggle.on .ft-dot { background: var(--clay); }
+.filter-toggle .ft-label { font-size: 12px; font-weight: 500; color: var(--dusk-mid); transition: color 0.15s; }
+.filter-toggle.on .ft-label { color: #8B4A2A; }
+.item.hidden-packed { display: none; }
+.section-empty-msg { padding: 14px 18px; font-size: 13px; color: var(--dusk-light); font-weight: 300; font-style: italic; display: none; }
+.section-empty-msg.show { display: block; }
+
+@media(max-width:740px) {
+  .main { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .dest-row { grid-template-columns: 1fr 1fr; }
+  .dest-row .btn-tailor { grid-column: 1/-1; }
+}
+@media(max-width:480px) {
+  .dest-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Pack<span>Pal</span></div>
+  <div class="nav-right">
+    <span class="nav-progress" id="navProgress">0 of 0 packed</span>
+    <button class="btn-nav" onclick="openExport()">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M5 7l3 3 3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1"/></svg>
+      Export
+    </button>
+  </div>
+</nav>
+
+<div class="hero">
+  <p class="hero-eyebrow">Baby travel made easier</p>
+  <h1>Pack smart,<br><em>travel light-ish.</em></h1>
+  <p>Tell us where you're going, how you're getting there, and what's happening — we'll build your list.</p>
+</div>
+
+<!-- CONFIGURATOR -->
+<div class="config-panel">
+  <div class="config-inner">
+
+    <!-- Row 1: Destination + dates -->
+    <div class="config-row">
+      <div class="config-row-label">Trip details</div>
+      <div class="dest-row">
+        <div class="field-group">
+          <label class="field-label" for="inp-dest">Destination</label>
+          <input class="field-input" id="inp-dest" type="text" placeholder="e.g. Hilton Head, SC" autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="inp-from">Departure</label>
+          <input class="field-input" id="inp-from" type="date" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="inp-to">Return</label>
+          <input class="field-input" id="inp-to" type="date" />
+        </div>
+        <button class="btn-tailor" id="tailorBtn" onclick="tailorList()">✦ Tailor my list</button>
+      </div>
+    </div>
+
+    <!-- Row 2: Destination type -->
+    <div class="config-row">
+      <div class="config-row-label">Destination type</div>
+      <div class="chip-row" id="destChips"></div>
+    </div>
+
+    <!-- Row 3: How you're getting there -->
+    <div class="config-row">
+      <div class="config-row-label">Getting there</div>
+      <div class="chip-row" id="transportChips"></div>
+    </div>
+
+    <!-- Row 4: Special occasions -->
+    <div class="config-row">
+      <div class="config-row-label">Special occasions</div>
+      <div class="chip-row" id="flagChips"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- WEATHER CARD -->
+<div class="weather-wrap" id="weatherWrap"></div>
+
+<!-- PROGRESS -->
+<div class="progress-strip">
+  <div class="progress-inner">
+    <div class="progress-track"><div class="progress-fill" id="pFill" style="width:0%"></div></div>
+    <div class="progress-text" id="pText"><strong>0</strong> of 0 packed</div>
+    <div class="filter-toggle" id="filterToggle" onclick="toggleFilter()">
+      <div class="ft-dot"></div>
+      <span class="ft-label">Still to pack</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <aside class="sidebar">
+    <div class="sidebar-label">Sections</div>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+  </aside>
+  <div class="sections" id="sectionsEl"></div>
+</div>
+
+<div class="spacer"></div>
+
+<div class="bottom-bar">
+  <div class="bb-label">Trip: <strong id="bbLabel">–</strong></div>
+  <div class="bb-btns">
+    <button class="btn-ghost" onclick="resetChecks()">Clear checks</button>
+    <button class="btn-ghost" onclick="clearAll()" style="font-size:12px;color:var(--dusk-light);">Reset all</button>
+    <button class="btn-dark" onclick="openExport()">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M5 7l3 3 3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1"/></svg>
+      Export list
+    </button>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <h2>Export your list</h2>
+    <p>Save your <span id="exportLabel">packing list</span> for offline reference, printing, or sharing.</p>
+    <div class="export-grid">
+      <div class="export-opt" onclick="doExport('print')"><span class="eo-icon">🖨️</span><div class="eo-title">Print / PDF</div><div class="eo-desc">Opens print dialog</div></div>
+      <div class="export-opt" onclick="doExport('copy')"><span class="eo-icon">📋</span><div class="eo-title">Copy as text</div><div class="eo-desc">Paste into Notes or Messages</div></div>
+      <div class="export-opt" onclick="doExport('html')"><span class="eo-icon">💾</span><div class="eo-title">Download HTML</div><div class="eo-desc">Standalone checklist file</div></div>
+      <div class="export-opt" onclick="doExport('csv')"><span class="eo-icon">📊</span><div class="eo-title">Download CSV</div><div class="eo-desc">Open in Excel or Sheets</div></div>
+    </div>
+    <button class="modal-close" onclick="closeExport()">Cancel</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// DATA — SELECTORS
+// ═══════════════════════════════════════════════════════════════════
+
+const DEST_TYPES = {
+  beach:   { label:'Beach',       icon:'🏖️' },
+  mountain:{ label:'Mountains',   icon:'⛰️' },
+  city:    { label:'City',        icon:'🏙️' },
+  country: { label:'Countryside', icon:'🌾' },
+  lake:    { label:'Lake / River',icon:'🏞️' },
+  resort:  { label:'All-inclusive resort', icon:'🏨' }
+};
+
+const TRANSPORTS = {
+  car:    { label:'Road trip',  icon:'🚗' },
+  flight: { label:'Flying',     icon:'✈️' },
+  train:  { label:'Train',      icon:'🚂' },
+  cruise: { label:'Cruise',     icon:'🚢' }
+};
+
+const FLAGS = {
+  wedding:  { label:'Wedding',    icon:'💍' },
+  holiday:  { label:'Holiday',    icon:'🎄' },
+  birthday: { label:'Birthday',   icon:'🎂' },
+  pool:     { label:'Pool party', icon:'🏊' },
+  photos:   { label:'Photos',     icon:'📸' }
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// PACKING SECTIONS — MECE: add-on sections only contain items
+// that don't already exist in the core sections.
+// Runtime deduplication also runs at render time as a safety net.
+// ═══════════════════════════════════════════════════════════════════
+const BASE = {
+  // ── CORE (always shown) ─────────────────────────────────────────
+  essentials: { title:'Diaper bag essentials', icon:'🎒', color:'#EEEDFE', items:[
+    {l:'Diapers (3–4 per day)',w:'baby'},
+    {l:'Baby wipes',w:'baby'},
+    {l:'Changing pad',w:'baby'},
+    {l:'Diaper cream / Desitin',w:'baby'},
+    {l:'Spare onesies (2–3)',w:'baby'},
+    {l:'Burp cloths (4–6)',w:'baby'},
+    {l:'Small trash bags for dirty diapers',w:'shared'},
+    {l:'Hand sanitizer',w:'shared'},
+    {l:'Zip-lock bags (multiple sizes)',w:'shared'}
+  ]},
+  clothing: { title:'Baby clothing', icon:'👕', color:'#E1F5EE', items:[
+    // Swimwear NOT here — appears only when a water destination/event is selected
+    {l:'Onesies (1–2 per day + extras)',w:'baby'},
+    {l:'Pants / leggings',w:'baby'},
+    {l:'Socks (several pairs)',w:'baby'},
+    {l:'Sleep sack / swaddle',w:'baby'},
+    {l:'Warm layer / baby jacket',w:'baby'},
+    {l:'Sun hat',w:'baby'},
+    {l:'Shoes or booties',w:'baby'},
+    {l:'Baby mittens',w:'baby'}
+  ]},
+  feeding: { title:'Feeding', icon:'🍼', color:'#FAEEDA', items:[
+    {l:'Formula or breast milk storage bags',w:'baby'},
+    {l:'Bottles (2–3)',w:'baby'},
+    {l:'Bottle brush + soap',w:'baby'},
+    {l:'Portable bottle warmer / insulated bag',w:'baby'},
+    {l:'Bibs (3–4)',w:'baby'},
+    {l:'Pacifiers (2+)',w:'baby'},
+    {l:'Nursing cover (if breastfeeding)',w:'adult'},
+    {l:'Small cooler bag for milk storage',w:'shared'}
+  ]},
+  sleep: { title:'Sleep', icon:'🌙', color:'#E6F1FB', items:[
+    {l:'Portable crib / travel bassinet',w:'baby'},
+    {l:'Fitted crib sheet (1–2)',w:'baby'},
+    {l:'Baby monitor',w:'shared'},
+    // White noise / sound machine: ONE entry here, not repeated in car/city sections
+    {l:'White noise machine or app',w:'shared'},
+    {l:'Familiar stuffed animal or toy',w:'baby'},
+    {l:'Blackout curtain or portable shade',w:'shared'},
+    {l:'Extra sleep sack',w:'baby'}
+  ]},
+  health: { title:'Health & safety', icon:'💊', color:'#FAECE7', items:[
+    {l:'Infant acetaminophen (Tylenol)',w:'baby'},
+    {l:'Infant ibuprofen (Motrin, 6mo+)',w:'baby'},
+    {l:'Baby thermometer',w:'baby'},
+    {l:'Nasal aspirator (NoseFrida)',w:'baby'},
+    {l:'Saline nasal drops',w:'baby'},
+    {l:'Gas drops',w:'baby'},
+    // Sunscreen lives here (both adult + baby noted); not duplicated in dest sections
+    {l:'Baby sunscreen (SPF 30+)',w:'baby'},
+    {l:'Sunscreen for you (SPF 30+)',w:'adult'},
+    {l:'Baby-safe bug repellent',w:'baby'},
+    {l:'First aid kit',w:'shared'},
+    {l:'Insurance cards + pediatrician number',w:'shared'},
+    {l:'Baby nail file / clippers',w:'baby'}
+  ]},
+  gear: { title:'Gear & entertainment', icon:'🎠', color:'#EEEDFE', items:[
+    // Stroller + carrier + car seat live here ONLY; transport/dest sections don't duplicate
+    {l:'Stroller',w:'shared'},
+    {l:'Baby carrier / wrap',w:'shared'},
+    {l:'Infant car seat',w:'shared'},
+    {l:'Play mat or blanket',w:'baby'},
+    {l:'2–3 favorite small toys',w:'baby'},
+    {l:'Teething toys',w:'baby'},
+    {l:'Board books',w:'baby'},
+    {l:'Portable high chair / clip-on seat',w:'shared'}
+  ]},
+  adult_daily: { title:'Your everyday essentials', icon:'👜', color:'#E6F1FB', items:[
+    // ID / passport lives here; not duplicated in flight section
+    {l:'ID / passport',w:'adult'},
+    {l:'Wallet + cards + cash',w:'adult'},
+    {l:'Phone + charger',w:'adult'},
+    {l:'Portable battery pack',w:'adult'},
+    // Headphones live here; not duplicated in train section
+    {l:'Headphones / earbuds',w:'adult'},
+    {l:'Sunglasses',w:'adult'},
+    {l:'Reusable water bottle',w:'adult'},
+    // ONE snacks entry here; transport sections only add journey-specific extras
+    {l:'Snacks for you',w:'adult'},
+    {l:'Prescription medications',w:'adult'},
+    {l:'Vitamins / supplements',w:'adult'}
+  ]},
+  adult_wellness: { title:'Your personal care', icon:'🧴', color:'#F0D9CC', items:[
+    {l:'Shampoo + conditioner',w:'adult'},
+    {l:'Body wash / soap',w:'adult'},
+    {l:'Deodorant',w:'adult'},
+    {l:'Facial cleanser',w:'adult'},
+    {l:'Moisturizer / face lotion',w:'adult'},
+    {l:'Lip balm with SPF',w:'adult'},
+    {l:'Toothbrush + toothpaste',w:'adult'},
+    {l:'Floss',w:'adult'},
+    {l:'Hair ties / bobby pins',w:'adult'},
+    {l:'Dry shampoo',w:'adult'},
+    {l:'Razor',w:'adult'},
+    {l:'Feminine hygiene products',w:'adult'},
+    {l:'Pain reliever (ibuprofen / Tylenol)',w:'adult'},
+    {l:'Antihistamine (Zyrtec / Benadryl)',w:'adult'},
+    {l:'Antacid / Pepto',w:'adult'},
+    {l:'Hand lotion',w:'adult'},
+    {l:'Tweezers',w:'adult'}
+  ]},
+  adult_style: { title:'Your clothing & style', icon:'👗', color:'#DAECf4', items:[
+    {l:'Outfits (1 per day + 1 extra)',w:'adult'},
+    {l:'Comfortable walking shoes',w:'adult'},
+    {l:'Casual evening shoes',w:'adult'},
+    {l:'Pajamas / loungewear',w:'adult'},
+    {l:'Workout clothes',w:'adult'},
+    {l:'Socks + underwear (extras)',w:'adult'},
+    {l:'Light jacket or cardigan',w:'adult'},
+    {l:'Belt',w:'adult'},
+    // Jewelry lives here ONLY — wedding section won't re-list it
+    {l:'Jewelry / accessories',w:'adult'},
+    {l:'Crossbody bag or belt bag',w:'adult'},
+    {l:'Laundry bag for dirties',w:'adult'}
+  ]},
+
+  // ── DESTINATION-TYPE SECTIONS ─────────────────────────────────
+  // Only items genuinely unique to that destination type.
+  // Items already in core (sunscreen, carrier, stroller, snacks, towels as toiletry) excluded.
+  sec_beach: { title:'Beach extras', icon:'🌊', color:'#E1F5EE', items:[
+    {l:'Baby beach tent / UV shelter',w:'baby'},
+    {l:'Baby swimsuit',w:'baby'},
+    {l:'Swim diaper',w:'baby'},
+    {l:'Baby float',w:'baby'},
+    {l:'Rash guard for baby',w:'baby'},
+    {l:'Extra towels (beach)',w:'shared'},
+    {l:'Beach bag',w:'shared'},
+    {l:'Sand-free beach mat',w:'shared'},
+    {l:'Adult swimsuit',w:'adult'},
+    {l:'Cover-up',w:'adult'},
+    {l:'Waterproof phone case',w:'adult'}
+  ]},
+  sec_mountain: { title:'Mountain extras', icon:'⛰️', color:'#DAECf4', items:[
+    // Carrier + stroller already in gear; snacks already in adult_daily
+    {l:'Baby warm hat + mittens',w:'baby'},
+    {l:'Extra warm layers for baby',w:'baby'},
+    {l:'Hiking boots (for you)',w:'adult'},
+    {l:'Trekking poles',w:'adult'},
+    {l:'Fleece / mid-layer for you',w:'adult'},
+    {l:'Altitude medication if needed',w:'adult'},
+    {l:'Trail mix / hiking snacks',w:'shared'},
+    {l:'Hand warmers',w:'shared'}
+  ]},
+  sec_city: { title:'City extras', icon:'🏙️', color:'#F1EFE8', items:[
+    // Stroller + carrier already in gear; sound machine already in sleep
+    {l:'Compact stroller rain cover',w:'shared'},
+    {l:'Transit card / metro app',w:'adult'},
+    {l:'Backup comfortable walking shoes',w:'adult'},
+    {l:'Maps downloaded offline',w:'adult'}
+  ]},
+  sec_country: { title:'Countryside extras', icon:'🌾', color:'#EAF3DE', items:[
+    // Carrier + stroller already in gear; bug repellent already in health
+    {l:'All-terrain stroller wheel covers',w:'shared'},
+    {l:'Waterproof boots (for you)',w:'adult'},
+    {l:'Wide-brim sun hat for you',w:'adult'}
+  ]},
+  sec_lake: { title:'Lake / River extras', icon:'🏞️', color:'#E1F5EE', items:[
+    // Sunscreen already in health; towels as toiletry already covered
+    {l:'Infant life jacket (coast-guard rated)',w:'baby'},
+    {l:'Baby swimsuit',w:'baby'},
+    {l:'Swim diaper',w:'baby'},
+    {l:'Extra towels (water)',w:'shared'},
+    {l:'Water shoes (for you)',w:'adult'},
+    {l:'Adult swimsuit',w:'adult'},
+    {l:'Dry bag for valuables',w:'shared'}
+  ]},
+  sec_resort: { title:'Resort extras', icon:'🏨', color:'#FAEEDA', items:[
+    // Swimsuit + swim diaper — only if beach/lake not already selected (dedup handles it)
+    {l:'Baby swimsuit',w:'baby'},
+    {l:'Swim diaper',w:'baby'},
+    {l:'Baby UV shelter (pool)',w:'baby'},
+    {l:'Dressy outfit for resort dinners',w:'adult'},
+    {l:'Adult swimsuit',w:'adult'},
+    {l:'Cover-up',w:'adult'},
+    {l:'Waterproof sandals',w:'adult'},
+    {l:'Light cardigan for AC at restaurants',w:'adult'}
+  ]},
+
+  // ── TRANSPORT SECTIONS ────────────────────────────────────────
+  // Car seat + carrier + stroller already in gear. Snacks already in adult_daily.
+  // Sound machine already in sleep. Headphones already in adult_daily.
+  tr_car: { title:'Road trip extras', icon:'🚗', color:'#FEF9ED', items:[
+    {l:'Car mirror to see baby',w:'shared'},
+    {l:'Car window shade (baby\'s side)',w:'baby'},
+    {l:'Extra diapers + wipes in easy reach',w:'baby'},
+    {l:'Baby toys clipped to car seat',w:'baby'},
+    {l:'Extra road-trip snacks + drinks',w:'adult'},
+    {l:'Paper towels + all-purpose wipes',w:'shared'},
+    {l:'Trash bag for car',w:'shared'},
+    {l:'Phone mount + charging cable',w:'adult'},
+    {l:'Roadside assistance info',w:'adult'}
+  ]},
+  tr_flight: { title:'Flying with baby', icon:'✈️', color:'#E8F0FE', items:[
+    // ID/passport already in adult_daily; headphones already in adult_daily
+    {l:'Gate check bag for stroller',w:'shared'},
+    {l:'Extra formula / milk (for delays)',w:'baby'},
+    {l:'Extra outfit in carry-on (you + baby)',w:'shared'},
+    {l:'Infant ear muffs / earplugs',w:'baby'},
+    {l:'Nursing pillow (if breastfeeding)',w:'adult'},
+    {l:'Neck pillow for you',w:'adult'},
+    {l:'Birth certificate (domestic) / passport copy',w:'shared'},
+    {l:'Flight snacks (beyond day snacks)',w:'adult'},
+    {l:'Entertainment downloaded offline',w:'adult'},
+    {l:'Disinfecting wipes for tray table',w:'shared'}
+  ]},
+  tr_train: { title:'Train travel extras', icon:'🚂', color:'#F5F3FF', items:[
+    // Headphones, snacks, stroller/carrier all already in core sections
+    {l:'Printed or downloaded tickets',w:'adult'},
+    {l:'Collapsible stroller (fits overhead)',w:'shared'},
+    {l:'Extra outfit in bag (long journeys)',w:'shared'},
+    {l:'Train-platform snacks (salty/fresh)',w:'adult'},
+    {l:'Baby snacks for journey',w:'baby'}
+  ]},
+  tr_cruise: { title:'Cruise extras', icon:'🚢', color:'#E1F5EE', items:[
+    // Swimsuit + swim diaper deduplicated at runtime if beach/lake/resort selected
+    {l:'Baby life jacket (check cruise line)',w:'baby'},
+    {l:'Baby swimsuit',w:'baby'},
+    {l:'Swim diaper (extra pack)',w:'baby'},
+    {l:'Formal / dressy outfit for dinners',w:'adult'},
+    {l:'Motion sickness bands or Dramamine',w:'adult'},
+    {l:'Seasickness remedy for baby if needed',w:'baby'},
+    {l:'Cruise card lanyard',w:'adult'},
+    {l:'Power strip (no surge protector)',w:'shared'},
+    {l:'Beach bag for port days',w:'shared'}
+  ]},
+
+  // ── EVENT FLAG SECTIONS ───────────────────────────────────────
+  // Jewelry already in adult_style; camera de-duplicated across holiday+birthday at runtime.
+  ev_wedding: { title:'Wedding', icon:'💍', color:'#EDE8F5', items:[
+    {l:'Formal dress / outfit (you)',w:'adult'},
+    {l:'Heels or dressy shoes',w:'adult'},
+    {l:'Clutch / evening bag',w:'adult'},
+    {l:'Shapewear / strapless bra',w:'adult'},
+    {l:'Blister plasters for heels',w:'adult'},
+    {l:'Stain remover pen (Tide To Go)',w:'shared'},
+    {l:'Backup casual outfit (you)',w:'adult'},
+    {l:'Baby dressy outfit',w:'baby'},
+    {l:'Baby soft shoes',w:'baby'},
+    {l:'Baby headband or bow',w:'baby'},
+    {l:'Quiet baby toys for ceremony',w:'baby'},
+    {l:'Baby snacks for reception',w:'baby'},
+    {l:'Card / gift for couple',w:'adult'},
+    {l:'Camera / charged batteries',w:'shared'}
+  ]},
+  ev_holiday: { title:'Holiday extras', icon:'🎄', color:'#EAF3DE', items:[
+    {l:'Holiday outfit for baby',w:'baby'},
+    {l:'Holiday outfit for you',w:'adult'},
+    {l:'Gifts (wrapped + labeled)',w:'shared'},
+    {l:'Gift bags / wrapping supplies',w:'shared'},
+    {l:"Baby's first holiday keepsake",w:'baby'},
+    {l:'Camera / charged batteries',w:'shared'},
+    {l:'Thank-you cards',w:'adult'}
+  ]},
+  ev_birthday: { title:'Birthday extras', icon:'🎂', color:'#FAEEDA', items:[
+    {l:'Party outfit for baby',w:'baby'},
+    {l:'Party outfit for you',w:'adult'},
+    {l:'Gift + card',w:'shared'},
+    // Camera deduplicated at runtime if holiday also selected
+    {l:'Camera / charged batteries',w:'shared'},
+    {l:'Extra bib for cake smash',w:'baby'},
+    {l:'Baby smash cake outfit',w:'baby'}
+  ]},
+  ev_pool: { title:'Pool party extras', icon:'🏊', color:'#DAECf4', items:[
+    // Swimsuit, swim diaper, float, rash guard deduplicated if beach/lake/resort selected
+    {l:'Baby swimsuit',w:'baby'},
+    {l:'Swim diapers (extra)',w:'baby'},
+    {l:'Baby UV sun shelter',w:'baby'},
+    {l:'Baby float',w:'baby'},
+    {l:'Rash guard for baby',w:'baby'},
+    {l:'Adult swimsuit',w:'adult'},
+    {l:'Cover-up / sarong',w:'adult'},
+    {l:'Waterproof mascara',w:'adult'},
+    {l:'Dry bag for valuables',w:'shared'},
+    {l:'Extra towels (pool)',w:'shared'}
+  ]},
+  ev_photos: { title:'Photo session extras', icon:'📸', color:'#FAEEDA', items:[
+    {l:'Photo outfit A for baby',w:'baby'},
+    {l:'Backup outfit B for baby',w:'baby'},
+    {l:'Your photo outfit',w:'adult'},
+    {l:'Backup outfit for you',w:'adult'},
+    {l:'Baby brush / hair accessories',w:'baby'},
+    {l:'Makeup touch-up kit (you)',w:'adult'},
+    {l:'Baby snacks (keep them happy)',w:'baby'},
+    {l:'Favourite toy for candid shots',w:'baby'},
+    {l:'Clear tape (outfit fixes)',w:'shared'}
+  ]}
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════
+let activeDest   = new Set();   // 0 or more dest types
+let activeTransport = new Set();// 0 or more transports
+let activeFlags  = new Set();
+
+// live section data (deep clone so deletions don't destroy BASE)
+let sections = {};
+function cloneSections() {
+  sections = {};
+  Object.entries(BASE).forEach(([k,v]) => {
+    sections[k] = { ...v, items: v.items.map(i=>({...i})) };
+  });
+}
+cloneSections();
+
+let checked  = {};   // rowKey -> bool
+let customs  = {};   // sid -> [{l,w}]
+let weatherExtras = {}; // sid -> [{l,w,pill:'weather'}]
+let openSecs = {};
+let filterActive = false; // show only unpacked items
+
+function activeSids() {
+  let ids = ['essentials','clothing','feeding','sleep','health','gear',
+             'adult_daily','adult_wellness','adult_style'];
+  activeDest.forEach(d  => { if(BASE['sec_'+d]) ids.push('sec_'+d); });
+  activeTransport.forEach(t => { if(BASE['tr_'+t]) ids.push('tr_'+t); });
+  activeFlags.forEach(f => { if(BASE['ev_'+f]) ids.push('ev_'+f); });
+  return [...new Set(ids)];
+}
+
+function rowKey(sid, src, idx) { return sid+'|'+src+'|'+idx; }
+
+// Normalize a label for dedup comparison: lowercase, strip punctuation, collapse spaces
+function norm(l) {
+  return l.toLowerCase()
+    .replace(/\(.*?\)/g, '')          // strip parentheticals like (2+), (if breastfeeding)
+    .replace(/[^a-z0-9 ]/g, ' ')     // strip punctuation
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Build a set of all normalized labels already seen in sections rendered BEFORE sid
+function seenBefore(currentSid) {
+  const seen = new Set();
+  const all = activeSids();
+  for (const sid of all) {
+    if (sid === currentSid) break;
+    const sec = sections[sid]; if (!sec) continue;
+    sec.items.forEach(item => seen.add(norm(item.l)));
+    (weatherExtras[sid]||[]).forEach(item => seen.add(norm(item.l)));
+    // customs are user-added, don't block them
+  }
+  return seen;
+}
+
+function getRows(sid) {
+  const sec = sections[sid]; if(!sec) return [];
+  const seen = seenBefore(sid);
+  let rows = [];
+  sec.items.forEach((item,i) => {
+    if (!seen.has(norm(item.l)))
+      rows.push({item, k:rowKey(sid,'b',i), src:'b', sid, idx:i});
+  });
+  (weatherExtras[sid]||[]).forEach((item,i) => {
+    if (!seen.has(norm(item.l)))
+      rows.push({item, k:rowKey(sid,'w',i), src:'w', sid, idx:i});
+  });
+  // Custom items always shown (user explicitly added them)
+  (customs[sid]||[]).forEach((item,i) => rows.push({item, k:rowKey(sid,'c',i), src:'c', sid, idx:i}));
+  return rows;
+}
+
+function totalCount() { return activeSids().reduce((s,sid)=>s+getRows(sid).length,0); }
+function checkedCount(){ return activeSids().reduce((s,sid)=>s+getRows(sid).filter(r=>checked[r.k]).length,0); }
+
+function deleteRow(sid, src, idx) {
+  if (src==='b') { sections[sid].items.splice(idx,1); }
+  else if (src==='w') { weatherExtras[sid].splice(idx,1); }
+  else if (src==='c') { customs[sid].splice(idx,1); }
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// WEATHER — real forecast via Open-Meteo (free, no API key)
+// Step 1: geocode destination name → lat/lon
+// Step 2: fetch actual daily forecast for the trip dates
+// Step 3: derive climate profile from real temps + rain data
+// ═══════════════════════════════════════════════════════════════════
+
+const CLIMATE_EXTRAS = {
+  hot: {
+    extras:{
+      clothing:[
+        {l:'Extra lightweight onesies (cotton)',w:'baby'},
+        {l:'UV-protective rash guard for baby',w:'baby'}
+      ],
+      health:[
+        {l:'Electrolyte packets (for you)',w:'adult'},
+        {l:'Cooling towel',w:'shared'}
+      ],
+      adult_wellness:[
+        {l:'After-sun lotion / aloe vera',w:'adult'},
+        {l:'Cooling face mist',w:'adult'}
+      ],
+      adult_style:[
+        {l:'Breathable linen or cotton outfits',w:'adult'},
+        {l:'Wide-brim sun hat (you)',w:'adult'}
+      ]
+    }
+  },
+  cold: {
+    extras:{
+      clothing:[
+        {l:'Heavyweight baby snowsuit or bunting',w:'baby'},
+        {l:'Wool or fleece base layer for baby',w:'baby'},
+        {l:'Waterproof outer layer for baby',w:'baby'}
+      ],
+      health:[
+        {l:'Baby skin balm (cold + wind = dry skin)',w:'baby'}
+      ],
+      adult_wellness:[
+        {l:'Heavy-duty moisturizer (cold + dry air)',w:'adult'}
+      ],
+      adult_style:[
+        {l:'Thermal base layers (for you)',w:'adult'},
+        {l:'Waterproof winter boots',w:'adult'},
+        {l:'Warm waterproof gloves',w:'adult'},
+        {l:'Warm hat / beanie (you)',w:'adult'}
+      ]
+    }
+  },
+  mild: {
+    extras:{
+      clothing:[{l:'Light fleece or cardigan for baby (evenings)',w:'baby'}],
+      adult_style:[{l:'Light rain jacket (just in case)',w:'adult'}]
+    }
+  },
+  rainy: {
+    extras:{
+      essentials:[{l:'Stroller rain cover',w:'shared'}],
+      clothing:[{l:'Waterproof layer for baby',w:'baby'}],
+      adult_wellness:[{l:'Compact travel umbrella',w:'adult'}],
+      adult_style:[
+        {l:'Waterproof rain jacket (you)',w:'adult'},
+        {l:'Waterproof boots or wellies (you)',w:'adult'}
+      ]
+    }
+  }
+};
+
+function climateFromForecast(avgMaxC, avgMinC, rainDays, totalDays) {
+  // Convert to Fahrenheit for intuitive thresholds
+  const avgMaxF = avgMaxC * 9/5 + 32;
+  const avgMinF = avgMinC * 9/5 + 32;
+  const rainPct = totalDays > 0 ? rainDays / totalDays : 0;
+
+  if (rainPct >= 0.5) return 'rainy';
+  if (avgMaxF >= 85)  return 'hot';
+  if (avgMaxF <= 45 || avgMinF <= 32) return 'cold';
+  return 'mild';
+}
+
+function weatherIcon(type) {
+  return {hot:'☀️', cold:'🥶', mild:'🌤️', rainy:'🌧️'}[type] || '🌤️';
+}
+
+function weatherHeadline(type, avgMaxF, avgMinF, rainPct) {
+  const hi = Math.round(avgMaxF), lo = Math.round(avgMinF), rain = Math.round(rainPct*100);
+  if (type==='hot')   return `Hot & sunny — highs around ${hi}°F`;
+  if (type==='cold')  return `Cold — highs ${hi}°F, lows ${lo}°F`;
+  if (type==='rainy') return `Expect rain ${rain}% of days, highs ${hi}°F`;
+  return `Comfortable — highs ${hi}°F, lows ${lo}°F`;
+}
+
+function weatherDesc(type, avgMaxF, avgMinF, rainPct) {
+  const hi = Math.round(avgMaxF), lo = Math.round(avgMinF), rain = Math.round(rainPct*100);
+  if (type==='hot')   return `Highs around ${hi}°F with strong UV. Baby needs lightweight breathable layers and shade. Plan outdoor time for early morning or evening and keep everyone hydrated.`;
+  if (type==='cold')  return `Highs around ${hi}°F dropping to ${lo}°F. Baby needs one more layer than you — think wool base layer + jacket + wind protection. Limit time outdoors in the coldest parts of the day.`;
+  if (type==='rainy') return `Rain expected on roughly ${rain}% of your trip days with highs around ${hi}°F. A stroller rain cover and waterproof layers for both of you will make a big difference.`;
+  return `Pleasant conditions with highs around ${hi}°F and lows ${lo}°F. Pack a light layer for evenings — temperatures can drop more than expected with a baby in a carrier.`;
+}
+
+function weatherTags(type, avgMaxF, rainPct) {
+  const hi = Math.round(avgMaxF), rain = Math.round(rainPct*100);
+  if (type==='hot')   return [`Highs ~${hi}°F`, 'Strong UV', 'Stay hydrated', 'Shade essential'];
+  if (type==='cold')  return [`Highs ~${hi}°F`, 'Layer up', 'Wind chill', 'Warm baby first'];
+  if (type==='rainy') return [`Rain ${rain}% of days`, `Highs ~${hi}°F`, 'Waterproof up', 'Indoor backups'];
+  return [`Highs ~${hi}°F`, 'Comfortable', 'Light layers', 'Nice for outdoors'];
+}
+
+async function tailorList() {
+  const dest = document.getElementById('inp-dest').value.trim();
+  const from = document.getElementById('inp-from').value;
+  const to   = document.getElementById('inp-to').value;
+
+  if (!dest) {
+    showWeatherCard('info','📍','Enter a destination first','Type a city, island, or country above and hit "Tailor my list" again.',[],0);
+    return;
+  }
+
+  const btn = document.getElementById('tailorBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="pulse">✦</span> Fetching forecast…';
+  showWeatherCard('mild','🌍','Looking up '+dest+'…','Geocoding destination and fetching real forecast data.',[],0);
+
+  try {
+    // ── Step 1: Geocode ──────────────────────────────────────────
+    const geoRes = await fetch(
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(dest)}&count=1&language=en&format=json`
+    );
+    const geoData = await geoRes.json();
+    if (!geoData.results || geoData.results.length === 0) throw new Error('Location not found');
+
+    const { latitude, longitude, name, country } = geoData.results[0];
+    const locationLabel = [name, country].filter(Boolean).join(', ');
+
+    // ── Step 2: Determine forecast date range ────────────────────
+    // Open-Meteo free tier gives 16-day forecast. For dates beyond that
+    // we still fetch what we can and note the limitation.
+    const today = new Date();
+    const startDate = from ? from : today.toISOString().split('T')[0];
+    // Clamp end date to 16 days from today
+    const maxEnd = new Date(today);
+    maxEnd.setDate(maxEnd.getDate() + 15);
+    let endDate = to ? to : startDate;
+    const endDateObj = new Date(endDate + 'T12:00:00');
+    const isBeyondForecast = endDateObj > maxEnd;
+    if (isBeyondForecast) endDate = maxEnd.toISOString().split('T')[0];
+
+    // ── Step 3: Fetch forecast ───────────────────────────────────
+    const wxRes = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
+      `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max` +
+      `&temperature_unit=celsius&timezone=auto&start_date=${startDate}&end_date=${endDate}`
+    );
+    const wxData = await wxRes.json();
+
+    if (!wxData.daily || !wxData.daily.temperature_2m_max.length) throw new Error('No forecast data');
+
+    const maxTemps = wxData.daily.temperature_2m_max.filter(v => v !== null);
+    const minTemps = wxData.daily.temperature_2m_min.filter(v => v !== null);
+    const precip   = wxData.daily.precipitation_sum.filter(v => v !== null);
+    const totalDays = maxTemps.length;
+
+    const avgMaxC = maxTemps.reduce((a,b)=>a+b,0) / totalDays;
+    const avgMinC = minTemps.reduce((a,b)=>a+b,0) / totalDays;
+    const rainDays = precip.filter(p => p >= 1).length; // ≥1mm = meaningful rain day
+
+    const avgMaxF = avgMaxC * 9/5 + 32;
+    const avgMinF = avgMinC * 9/5 + 32;
+    const rainPct = rainDays / totalDays;
+
+    const climateType = climateFromForecast(avgMaxC, avgMinC, rainDays, totalDays);
+
+    // ── Step 4: Apply packing extras ────────────────────────────
+    weatherExtras = {};
+    const extras = CLIMATE_EXTRAS[climateType]?.extras || {};
+    Object.entries(extras).forEach(([sid, items]) => {
+      weatherExtras[sid] = items.map(i => ({...i, pill:'weather'}));
+    });
+
+    const totalAdded = Object.values(weatherExtras).flat().length;
+    const beyondNote = isBeyondForecast
+      ? ` (forecast covers ${totalDays} days — your full trip dates are too far out for a live forecast)`
+      : ` · ${totalDays}-day forecast`;
+
+    showWeatherCard(
+      climateType,
+      weatherIcon(climateType),
+      locationLabel + beyondNote,
+      weatherDesc(climateType, avgMaxF, avgMinF, rainPct),
+      weatherTags(climateType, avgMaxF, rainPct),
+      totalAdded
+    );
+    render();
+
+  } catch(err) {
+    showWeatherCard('info','⚠️','Could not fetch forecast for "'+dest+'"',
+      'Check the spelling (try "Hilton Head, SC" or "Paris, France") and make sure you\'re online. Your list still works without weather data.',
+      [], 0);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '✦ Tailor my list';
+}
+
+function showWeatherCard(type, icon, headline, desc, tags, added) {
+  const wrap = document.getElementById('weatherWrap');
+  const tagHtml = (tags||[]).map(t=>'<span class="wc-tag">'+t+'</span>').join('');
+  const addedTag = added ? '<span class="wc-tag added">✦ '+added+' items added to list</span>' : '';
+  wrap.innerHTML = `<div class="weather-card ${type}" style="margin-top:1rem">
+    <div class="wc-icon">${icon}</div>
+    <div class="wc-body">
+      <div class="wc-headline">${headline}</div>
+      <div class="wc-desc">${desc}</div>
+      <div class="wc-tags">${tagHtml}${addedTag}</div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════════
+function bClass(w){ return w==='baby'?'badge-baby':w==='adult'?'badge-adult':'badge-shared'; }
+function bLabel(w){ return w==='baby'?'Baby':w==='adult'?'You':'Shared'; }
+
+function renderChips() {
+  // dest type
+  const dc = document.getElementById('destChips');
+  dc.innerHTML = '';
+  Object.entries(DEST_TYPES).forEach(([id,d]) => {
+    const el = document.createElement('div');
+    el.className = 'chip'+(activeDest.has(id)?' active-sage':'');
+    el.innerHTML = '<span class="chip-icon">'+d.icon+'</span><span class="chip-label">'+d.label+'</span>';
+    el.onclick = () => { activeDest.has(id)?activeDest.delete(id):activeDest.add(id); render(); };
+    dc.appendChild(el);
+  });
+
+  // transport
+  const tc = document.getElementById('transportChips');
+  tc.innerHTML = '';
+  Object.entries(TRANSPORTS).forEach(([id,t]) => {
+    const el = document.createElement('div');
+    el.className = 'chip'+(activeTransport.has(id)?' active-sage':'');
+    el.innerHTML = '<span class="chip-icon">'+t.icon+'</span><span class="chip-label">'+t.label+'</span>';
+    el.onclick = () => { activeTransport.has(id)?activeTransport.delete(id):activeTransport.add(id); render(); };
+    tc.appendChild(el);
+  });
+
+  // flags
+  const fc = document.getElementById('flagChips');
+  fc.innerHTML = '';
+  Object.entries(FLAGS).forEach(([id,f]) => {
+    const el = document.createElement('div');
+    el.className = 'chip'+(activeFlags.has(id)?' active-clay':'');
+    el.innerHTML = '<span class="chip-icon">'+f.icon+'</span><span class="chip-label">'+f.label+'</span>';
+    el.onclick = () => { activeFlags.has(id)?activeFlags.delete(id):activeFlags.add(id); render(); };
+    fc.appendChild(el);
+  });
+}
+
+function toggleFilter() {
+  filterActive = !filterActive;
+  const el = document.getElementById('filterToggle');
+  el.classList.toggle('on', filterActive);
+  // auto-open all sections when filter is on so user can see everything
+  if (filterActive) activeSids().forEach(sid => openSecs[sid] = true);
+  render();
+}
+
+function renderProgress() {
+  const tot = totalCount(), chk = checkedCount();
+  const remaining = tot - chk;
+  const pct = tot ? Math.round(chk/tot*100) : 0;
+  document.getElementById('pFill').style.width = pct+'%';
+  document.getElementById('pText').innerHTML = '<strong>'+chk+'</strong> of '+tot+' packed';
+  document.getElementById('navProgress').innerHTML = '<strong>'+chk+' of '+tot+'</strong> packed';
+
+  // update filter label dynamically
+  const ft = document.getElementById('filterToggle');
+  ft.classList.toggle('on', filterActive);
+  ft.querySelector('.ft-label').textContent = filterActive
+    ? (remaining > 0 ? remaining+' still to pack' : 'All packed! 🎉')
+    : 'Still to pack';
+
+  const destNames = [...activeDest].map(d=>DEST_TYPES[d].label).join(', ');
+  const trNames   = [...activeTransport].map(t=>TRANSPORTS[t].label).join(' + ');
+  const flagNames = [...activeFlags].map(f=>FLAGS[f].label).join(', ');
+  let label = destNames || 'Trip';
+  if (trNames)   label += ' · '+trNames;
+  if (flagNames) label += ' · '+flagNames;
+  document.getElementById('bbLabel').textContent = label;
+  document.getElementById('exportLabel').textContent = label + ' packing list';
+}
+
+function renderSections() {
+  const container = document.getElementById('sectionsEl');
+  const sidebar   = document.getElementById('sidebarNav');
+  container.innerHTML = '';
+  sidebar.innerHTML   = '';
+
+  activeSids().forEach((sid, si) => {
+    const sec = sections[sid]; if(!sec) return;
+    const rows = getRows(sid);
+    const chk  = rows.filter(r=>checked[r.k]).length;
+    const tot  = rows.length;
+    const isOpen = openSecs[sid] !== false;
+
+    // sidebar entry
+    const sl = document.createElement('a');
+    sl.className = 'sidebar-link'+(chk===tot&&tot>0?' done':'');
+    sl.href = '#s-'+sid;
+    sl.innerHTML = '<span class="sl-icon">'+sec.icon+'</span>'+sec.title+'<span class="sl-pct">'+chk+'/'+tot+'</span>';
+    sl.onclick = e => { e.preventDefault(); document.getElementById('s-'+sid)?.scrollIntoView({behavior:'smooth',block:'start'}); };
+    sidebar.appendChild(sl);
+
+    // section card
+    const div = document.createElement('div');
+    div.className = 'section'+(isOpen?' open':'');
+    div.id = 's-'+sid;
+
+    const hdr = document.createElement('div');
+    hdr.className = 'section-header';
+    hdr.innerHTML = '<div class="sh-icon-box" style="background:'+sec.color+'">'+sec.icon+'</div><div class="sh-title">'+sec.title+'</div><span class="sh-count">'+chk+'/'+tot+'</span><span class="sh-chev">▾</span>';
+    hdr.onclick = () => { openSecs[sid] = !div.classList.contains('open'); div.classList.toggle('open'); };
+    div.appendChild(hdr);
+
+    const body = document.createElement('div');
+    body.className = 'section-body';
+
+    const unpacked = rows.filter(r => !checked[r.k]);
+
+    rows.forEach(({item, k, src, idx}) => {
+      const on = !!checked[k];
+      const hidden = filterActive && on;
+      const row = document.createElement('div');
+      row.className = 'item' + (hidden ? ' hidden-packed' : '');
+
+      const cb = document.createElement('div');
+      cb.className = 'cb'+(on?' on':'');
+      cb.onclick = () => { checked[k]=!checked[k]; render(); };
+
+      const txt = document.createElement('span');
+      txt.className = 'item-text'+(on?' done':'');
+      const pill = item.pill ? '<span class="item-pill pill-'+item.pill+'">'+item.pill+'</span>' : '';
+      txt.innerHTML = item.l + pill;
+      txt.onclick = () => { checked[k]=!checked[k]; render(); };
+
+      const badge = document.createElement('span');
+      badge.className = 'badge '+bClass(item.w);
+      badge.textContent = bLabel(item.w);
+
+      const del = document.createElement('button');
+      del.className = 'item-del';
+      del.title = 'Remove item';
+      del.textContent = '×';
+      del.onclick = e => { e.stopPropagation(); deleteRow(sid, src, idx); };
+
+      row.appendChild(cb); row.appendChild(txt); row.appendChild(badge); row.appendChild(del);
+      body.appendChild(row);
+    });
+
+    // empty state when filter hides everything in a section
+    const emptyMsg = document.createElement('div');
+    emptyMsg.className = 'section-empty-msg' + (filterActive && unpacked.length === 0 && tot > 0 ? ' show' : '');
+    emptyMsg.textContent = '✓ All items in this section are packed';
+    body.appendChild(emptyMsg);
+
+    // add-item row
+    let whoState = 'shared';
+    const addRow = document.createElement('div');
+    addRow.className = 'add-row';
+    const inp = document.createElement('input');
+    inp.placeholder = 'Add an item…'; inp.maxLength = 80;
+    const whoBtn = document.createElement('button');
+    whoBtn.className = 'who-btn';
+    whoBtn.textContent = 'Shared';
+    whoBtn.onclick = e => {
+      e.stopPropagation();
+      whoState = whoState==='shared'?'baby':whoState==='baby'?'adult':'shared';
+      whoBtn.className = 'who-btn'+(whoState!=='shared'?' '+whoState:'');
+      whoBtn.textContent = whoState==='baby'?'Baby':whoState==='adult'?'You':'Shared';
+    };
+    const addBt = document.createElement('button');
+    addBt.className = 'add-btn'; addBt.textContent = '+';
+    addBt.onclick = e => {
+      e.stopPropagation();
+      const v = inp.value.trim(); if(!v) return;
+      if(!customs[sid]) customs[sid]=[];
+      customs[sid].push({l:v, w:whoState});
+      inp.value=''; whoState='shared'; whoBtn.className='who-btn'; whoBtn.textContent='Shared';
+      render();
+    };
+    inp.onkeydown = e => { if(e.key==='Enter') addBt.click(); };
+    addRow.appendChild(inp); addRow.appendChild(whoBtn); addRow.appendChild(addBt);
+    body.appendChild(addRow);
+    div.appendChild(body);
+    container.appendChild(div);
+  });
+}
+
+function saveState() {
+  try {
+    localStorage.setItem('packpal_v1', JSON.stringify({
+      checked,
+      customs,
+      activeDest:      [...activeDest],
+      activeTransport: [...activeTransport],
+      activeFlags:     [...activeFlags],
+      openSecs,
+      filterActive,
+      deletions: buildDeletions(),
+      tripInputs: {
+        dest: document.getElementById('inp-dest').value,
+        from: document.getElementById('inp-from').value,
+        to:   document.getElementById('inp-to').value
+      }
+    }));
+  } catch(e) { /* storage full or private mode — fail silently */ }
+}
+
+// Track which base items have been deleted so we can re-apply on load
+function buildDeletions() {
+  const deletions = {};
+  Object.keys(BASE).forEach(sid => {
+    const baseSec = BASE[sid];
+    const liveSec = sections[sid];
+    if (!liveSec) return;
+    const deleted = [];
+    baseSec.items.forEach((item, i) => {
+      const stillExists = liveSec.items.some(li => li.l === item.l);
+      if (!stillExists) deleted.push(i);
+    });
+    if (deleted.length) deletions[sid] = deleted;
+  });
+  return deletions;
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem('packpal_v1');
+    if (!raw) return;
+    const s = JSON.parse(raw);
+
+    if (s.activeDest)      activeDest      = new Set(s.activeDest);
+    if (s.activeTransport) activeTransport = new Set(s.activeTransport);
+    if (s.activeFlags)     activeFlags     = new Set(s.activeFlags);
+    if (s.checked)         checked         = s.checked;
+    if (s.customs)         customs         = s.customs;
+    if (s.openSecs)        openSecs        = s.openSecs;
+    if (typeof s.filterActive === 'boolean') filterActive = s.filterActive;
+
+    // Re-apply deletions to the live sections clone
+    if (s.deletions) {
+      Object.entries(s.deletions).forEach(([sid, idxs]) => {
+        if (!sections[sid]) return;
+        // Remove in reverse order so indices stay valid
+        [...idxs].sort((a,b)=>b-a).forEach(i => {
+          sections[sid].items.splice(i, 1);
+        });
+      });
+    }
+
+    // Restore trip inputs
+    if (s.tripInputs) {
+      if (s.tripInputs.dest) document.getElementById('inp-dest').value = s.tripInputs.dest;
+      if (s.tripInputs.from) document.getElementById('inp-from').value = s.tripInputs.from;
+      if (s.tripInputs.to)   document.getElementById('inp-to').value   = s.tripInputs.to;
+    }
+  } catch(e) { /* corrupted storage — start fresh */ }
+}
+
+function render() {
+  renderChips();
+  renderProgress();
+  renderSections();
+  saveState();
+}
+
+function resetChecks() {
+  checked = {};
+  render();
+}
+
+function clearAll() {
+  if (!confirm('Reset everything — checks, custom items, deletions, and trip selections?')) return;
+  try { localStorage.removeItem('packpal_v1'); } catch(e) {}
+  checked = {}; customs = {}; weatherExtras = {};
+  activeDest = new Set(); activeTransport = new Set(); activeFlags = new Set();
+  filterActive = false;
+  Object.keys(BASE).forEach(sid => openSecs[sid] = true);
+  cloneSections();
+  document.getElementById('inp-dest').value = '';
+  document.getElementById('inp-from').value = '';
+  document.getElementById('inp-to').value = '';
+  document.getElementById('weatherWrap').innerHTML = '';
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════════════════════════
+function openExport()  { document.getElementById('exportModal').classList.add('show'); }
+function closeExport() { document.getElementById('exportModal').classList.remove('show'); }
+document.getElementById('exportModal').onclick = function(e){ if(e.target===this) closeExport(); };
+
+function buildText() {
+  const dest = document.getElementById('inp-dest').value.trim();
+  const from = document.getElementById('inp-from').value;
+  const to   = document.getElementById('inp-to').value;
+  let t = 'PACKPAL PACKING LIST\nFor you + 6-month-old';
+  if(dest) t += '\nDestination: '+dest;
+  if(from) t += '\nDates: '+from+(to?' – '+to:'');
+  t += '\n'+'─'.repeat(40)+'\n\n';
+  activeSids().forEach(sid=>{
+    const sec=sections[sid];if(!sec)return;
+    t += sec.icon+' '+sec.title.toUpperCase()+'\n';
+    getRows(sid).forEach(({item,k})=>{ t+='  '+(checked[k]?'[x]':'[ ]')+' '+item.l+' ('+bLabel(item.w)+')\n'; });
+    t+='\n';
+  });
+  return t;
+}
+function buildCSV() {
+  let c='Section,Item,For,Packed\n';
+  activeSids().forEach(sid=>{
+    const sec=sections[sid];if(!sec)return;
+    getRows(sid).forEach(({item,k})=>{ c+='"'+sec.title+'","'+item.l+'","'+bLabel(item.w)+'","'+(checked[k]?'Yes':'No')+'"\n'; });
+  });
+  return c;
+}
+function buildHTMLExport() {
+  const dest=document.getElementById('inp-dest').value.trim();
+  const from=document.getElementById('inp-from').value;
+  const to=document.getElementById('inp-to').value;
+  const tot=totalCount(),chk=checkedCount();
+  let body='';
+  activeSids().forEach(sid=>{
+    const sec=sections[sid];if(!sec)return;
+    let rows=getRows(sid).map(({item,k})=>{
+      const d=checked[k];
+      return '<tr style="border-bottom:1px solid #eee;'+(d?'opacity:0.5':'')+'"><td style="padding:8px 10px;font-size:15px;">'+(d?'☑':'☐')+'</td><td style="padding:8px 4px;font-size:13px;'+(d?'text-decoration:line-through':'')+'">'+item.l+'</td><td style="padding:8px 10px;font-size:11px;color:#888;">'+bLabel(item.w)+'</td></tr>';
+    }).join('');
+    body+='<h3 style="margin:22px 0 8px;font-family:Georgia,serif;font-size:15px;">'+sec.icon+' '+sec.title+'</h3><table style="width:100%;border-collapse:collapse;">'+rows+'</table>';
+  });
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PackPal</title></head><body style="font-family:sans-serif;max-width:580px;margin:36px auto;color:#333;padding:0 20px;"><h1 style="font-family:Georgia,serif;font-size:26px;margin-bottom:4px;">PackPal</h1><p style="color:#888;margin-bottom:2px;">For you + 6-month-old</p>'+(dest?'<p style="color:#888;margin-bottom:2px;">📍 '+dest+(from?' · '+from:'')+(to?' – '+to:'')+'</p>':'')+'<p style="color:#5a9e70;font-weight:600;margin-bottom:20px;">'+chk+' of '+tot+' items packed</p>'+body+'<p style="margin-top:28px;font-size:11px;color:#bbb;">PackPal</p></body></html>';
+}
+function dl(name,content,mime){ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:mime}));a.download=name;a.click(); }
+function doExport(type) {
+  closeExport();
+  if(type==='print'){ const w=window.open('','_blank');w.document.write(buildHTMLExport());w.document.close();setTimeout(()=>w.print(),400); }
+  else if(type==='copy'){ navigator.clipboard.writeText(buildText()).then(()=>alert('Copied to clipboard!')).catch(()=>dl('packpal.txt',buildText(),'text/plain')); }
+  else if(type==='html'){ dl('packpal.html',buildHTMLExport(),'text/html'); }
+  else if(type==='csv'){ dl('packpal.csv',buildCSV(),'text/csv'); }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+Object.keys(BASE).forEach(sid => openSecs[sid] = true); // default all open
+cloneSections(); // fresh clone before loadState applies deletions
+loadState();     // restore saved state on top
+render();
+</script>
+</body>
+</html>
