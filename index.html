@@ -237,6 +237,7 @@ input[type="date"].field-input { color-scheme: light; }
     </button>
   </div>
 </nav>
+<div id="syncErr" style="display:none;background:#FDECEA;color:#8A1F1F;font-size:12px;padding:8px 16px;word-break:break-word;"></div>
 
 <div class="hero">
   <p class="hero-eyebrow">Baby travel made easier</p>
@@ -1223,6 +1224,18 @@ const SUPABASE_KEY = 'sb_publishable_HZVAHaVUEYlnlcswvZIZSw_zVX0yePf';
 const ROW_ID = 'packpal_shared';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+function showSyncErr(where, e) {
+  const el = document.getElementById('syncErr');
+  if (!el) return;
+  if (!e) { el.style.display='none'; el.textContent=''; return; }
+  const msg = (e && (e.message || e.details || e.hint)) ? [e.code, e.message, e.details, e.hint].filter(Boolean).join(' | ') : String(e);
+  el.textContent = where + ': ' + msg;
+  el.style.display = 'block';
+}
+
+let applyingRemote = false;
+let lastSavedJSON = '';
+
 function setSyncPill(text, cls) {
   const el = document.getElementById('syncPill');
   if (!el) return;
@@ -1295,11 +1308,14 @@ async function loadFromSupabase() {
       applySnapshot(data.data);
     } else {
       // First load — create the row
-      await sb.from('packpal').upsert({ id: ROW_ID, data: buildSnapshot() });
+      const r = await sb.from('packpal').upsert({ id: ROW_ID, data: buildSnapshot() });
+      if (r.error) throw r.error;
     }
+    showSyncErr('', null);
     setSyncPill('synced', 'synced');
   } catch(e) {
     console.error('PackPal load error:', e);
+    showSyncErr('Load failed', e);
     setSyncPill('offline', 'error');
     // Fall back to localStorage if Supabase unavailable
     try {
@@ -1326,9 +1342,12 @@ async function saveState() {
         updated_at: new Date().toISOString()
       });
       if (error) throw error;
+      lastSavedJSON = JSON.stringify(snapshot);
+      showSyncErr('', null);
       setSyncPill('synced', 'synced');
     } catch(e) {
       console.error('PackPal save error:', e);
+      showSyncErr('Save failed', e);
       setSyncPill('saved locally', 'error');
     }
   }, 600);
@@ -1340,9 +1359,13 @@ sb.channel('packpal_changes')
     event: 'UPDATE', schema: 'public', table: 'packpal', filter: `id=eq.${ROW_ID}`
   }, payload => {
     if (!payload.new?.data) return;
+    // ignore echoes of our own saves (prevents an endless save loop)
+    if (JSON.stringify(payload.new.data) === lastSavedJSON) return;
+    applyingRemote = true;
     cloneSections();
     applySnapshot(payload.new.data);
     render();
+    applyingRemote = false;
     setSyncPill('synced', 'synced');
   })
   .subscribe();
@@ -1351,7 +1374,7 @@ function render() {
   renderChips();
   renderProgress();
   renderSections();
-  saveState();
+  if (!applyingRemote) saveState();
 }
 
 function resetChecks() {
